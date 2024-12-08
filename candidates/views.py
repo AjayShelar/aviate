@@ -81,10 +81,9 @@ class CandidateSearchView(views.APIView):
         """
         Handles search and relevancy scoring logic for candidates.
         """
-        queryset = Candidate.objects.all()
 
         if not query:
-            return queryset
+            return Candidate.objects.none()
 
         search_terms = query.split()
         # Build relevancy conditions for each term
@@ -99,6 +98,10 @@ class CandidateSearchView(views.APIView):
 
         # Calculate relevancy score by summing up the conditions
         relevancy_annotation = sum(conditions)
+              # Apply threshold: return empty queryset if no results meet the relevancy threshold
+        queryset =Candidate.objects.annotate(relevancy=relevancy_annotation)
+        if not queryset.filter(relevancy__gte=1).exists():
+            return Candidate.objects.none()
+        queryset = queryset.filter(relevancy__gte=1).order_by('-relevancy')
 
-        # Annotate queryset with the relevancy score and order by it
-        return queryset.annotate(relevancy=relevancy_annotation).order_by('-relevancy')
+        return queryset

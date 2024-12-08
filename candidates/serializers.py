@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import Candidate
 
+from django.core.validators import EmailValidator
+from rest_framework import serializers
+
+
 class CandidateSerializer(serializers.ModelSerializer):
     """
     Serializer for the Candidate model with additional computed fields and validations.
@@ -29,9 +33,19 @@ class CandidateSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         """
         Field-level validation for the email field.
+        Ensures correct format and avoids forbidden content.
         """
+        # Validate email format
+        email_validator = EmailValidator()
+        try:
+            email_validator(value)
+        except Exception:
+            raise serializers.ValidationError("Enter a valid email address.")
+
+        # Custom validation: forbid 'spam' in email addresses
         if "spam" in value.lower():
             raise serializers.ValidationError("Email cannot contain the word 'spam'.")
+        
         return value
 
     def validate(self, data):

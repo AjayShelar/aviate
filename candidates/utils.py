@@ -6,18 +6,23 @@ from django.http import JsonResponse
 
 # Custom Exception Handler
 def custom_exception_handler(exc, context):
+    """
+    Custom exception handler to include an 'error' key in validation errors.
+    """
+    # Call the default exception handler first
     response = exception_handler(exc, context)
 
-    # Handle DRF exceptions
     if response is not None:
-        return response
+        # Modify the response for validation errors
+        if isinstance(exc, ValidationError):
+            response.data = {
+                "error": response.data,  # Include the validation error details under 'error'
+                "status_code": response.status_code
+            }
+        else:
+            response.data["error"] = "An unexpected error occurred."
 
-    # Handle generic validation errors
-    if isinstance(exc, ValidationError):
-        return JsonResponse({"error": exc.detail}, status=400)
-
-    # Handle other exceptions
-    return JsonResponse({"error": "An unexpected error occurred."}, status=500)
+    return response
 
 
 
