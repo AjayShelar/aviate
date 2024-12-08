@@ -202,3 +202,110 @@ class CandidateCreateAPITest(TestCase):
         response = self.client.post('/api/candidates/', data=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("phone_number", response.json()["error"])
+
+
+
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from .models import Candidate
+
+
+class CandidateUpdateDeleteAPITest(TestCase):
+    def setUp(self):
+        """
+        Set up the API client and seed the database with a candidate.
+        """
+        self.client = APIClient()
+        self.candidate = Candidate.objects.create(
+            name="Ajay Kumar",
+            age=30,
+            gender="M",
+            email="ajay@example.com",
+            phone_number="1234567890"
+        )
+        self.update_payload = {
+            "name": "Ajay Kumar Updated",
+            "age": 35,
+            "gender": "M",
+            "email": "updated@example.com",
+            "phone_number": "9876543210"
+        }
+
+    def test_update_candidate_success(self):
+        """
+        Test updating a candidate with valid data.
+        """
+        response = self.client.put(f'/api/candidates/{self.candidate.id}/', data=self.update_payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["name"], "Ajay Kumar Updated")
+        self.assertEqual(response.json()["email"], "updated@example.com")
+
+        # Ensure the candidate is updated in the database
+        candidate = Candidate.objects.get(id=self.candidate.id)
+        self.assertEqual(candidate.name, "Ajay Kumar Updated")
+        self.assertEqual(candidate.email, "updated@example.com")
+
+    def test_update_candidate_invalid_email(self):
+        """
+        Test updating a candidate with an invalid email.
+        """
+        payload = self.update_payload.copy()
+        payload["email"] = "invalid-email"
+        response = self.client.put(f'/api/candidates/{self.candidate.id}/', data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.json()["error"])
+
+    def test_update_candidate_invalid_age(self):
+        """
+        Test updating a candidate with an invalid age.
+        """
+        payload = self.update_payload.copy()
+        payload["age"] = 15  # Invalid age
+        response = self.client.put(f'/api/candidates/{self.candidate.id}/', data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("age", response.json()["error"])
+
+    def test_update_candidate_not_found(self):
+        """
+        Test updating a candidate that does not exist.
+        """
+        response = self.client.put('/api/candidates/9999/', data=self.update_payload)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_partial_update_candidate(self):
+        """
+        Test partially updating a candidate.
+        """
+        partial_payload = {"name": "Ajay Partial Update"}
+        response = self.client.patch(f'/api/candidates/{self.candidate.id}/', data=partial_payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["name"], "Ajay Partial Update")
+
+        # Ensure other fields remain unchanged
+        candidate = Candidate.objects.get(id=self.candidate.id)
+        self.assertEqual(candidate.age, 30)
+        self.assertEqual(candidate.email, "ajay@example.com")
+
+    def test_delete_candidate_success(self):
+        """
+        Test deleting a candidate successfully.
+        """
+        response = self.client.delete(f'/api/candidates/{self.candidate.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Ensure the candidate is deleted from the database
+        with self.assertRaises(Candidate.DoesNotExist):
+            Candidate.objects.get(id=self.candidate.id)
+
+    def test_delete_candidate_not_found(self):
+        """
+        Test deleting a candidate that does not exist.
+        """
+        response = self.client.delete('/api/candidates/9999/')
+        self.assertEqual(response.status_code, 404)
+        print(response.json())
+        self.assertEqual(response.json()["error"], "An unexpected error occurred.")
+        self.assertEqual(response.json()["detail"], "No Candidate matches the given query.")
+    
+    

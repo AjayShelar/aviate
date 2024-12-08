@@ -10,7 +10,7 @@ from django.db.models.functions import Lower
 from .models import Candidate
 from .serializers import CandidateSerializer
 from .pagination import CandidatePagination
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from .serializers import CandidateSearchSerializer
 from .pagination import CandidatePagination
 from .models import Candidate
@@ -43,8 +43,14 @@ class CandidateCreateView(generics.CreateAPIView):
 
 
 class CandidateUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API View to retrieve, update, and delete a candidate.
+    """
     queryset = Candidate.objects.all()
     serializer_class = CandidateSerializer
+
+
+    
 
 
 
