@@ -48,17 +48,27 @@ class CandidateSerializer(serializers.ModelSerializer):
         
         return value
 
+    def validate_age(self, value):
+        """
+        Field-level validation for age.
+        """
+        if value < 18:
+            raise serializers.ValidationError("Age must be at least 18.")
+        return value
+
+    def validate_gender(self, value):
+        """
+        Field-level validation for gender.
+        """
+        if value not in ["M", "F", "O"]:
+            raise serializers.ValidationError("Gender must be one of 'M', 'F', or 'O'.")
+        return value
+
     def validate(self, data):
         """
-        Object-level validation for age and gender constraints.
+        Object-level validation for cross-field constraints or global checks.
         """
-        age = data.get("age")
-        gender = data.get("gender")
-
-        if age and age < 18:
-            raise serializers.ValidationError("Age must be at least 18.")
-        if gender not in ["M", "F", "O"]:
-            raise serializers.ValidationError("Gender must be one of 'M', 'F', or 'O'.")
+        # If no cross-field validation is required, leave this method clean
         return data
 
 

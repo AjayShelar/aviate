@@ -1,6 +1,9 @@
 from django.test import TestCase
 from .models import Candidate
 
+from rest_framework.test import APIClient
+from rest_framework import status
+
 
 class CandidateTests(TestCase):
     def setUp(self):
